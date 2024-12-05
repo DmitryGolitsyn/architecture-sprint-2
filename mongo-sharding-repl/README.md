@@ -30,23 +30,26 @@ exit();
 ### Инициализируем сервера шардов
 
 ```shell
-docker exec -it shard1 mongosh --port 27018
-
+docker exec -it shard1-1 mongosh --port 27018
 rs.initiate({
-  _id: "shard1",
-  members: [{ _id: 0, host: "shard1:27018" }]
+  _id: "shard1-1",
+  members: [
+        { _id: 0, host: "shard1-1:27018" },
+        { _id: 1, host: "shard1-2:27028" },
+        { _id: 2, host: "shard1-3:27038" },
+    ]
 });
-
 exit();
-
-
-docker exec -it shard2 mongosh --port 27019
-
+````
+```shell
+docker exec -it shard2-1 mongosh --port 27019
 rs.initiate({
-  _id: "shard2",
-  members: [{ _id: 0, host: "shard2:27019" }]
-});
-
+  _id: "shard2-1",
+  members: [
+        { _id: 0, host: "shard2-1:27019" },
+        { _id: 1, host: "shard2-2:27029" },
+        { _id: 2, host: "shard2-3:27039" },
+    ]});
 exit();
 ```
 
@@ -55,14 +58,12 @@ exit();
 ```shell
 docker exec -it mongos1 mongosh --port 27020
 
-sh.addShard("shard1/shard1:27018");
-sh.addShard("shard2/shard2:27019");
+sh.addShard("shard1-1/shard1-1:27018");
+sh.addShard("shard2-1/shard2-1:27019");
 
-# Включение шардирования
 sh.enableSharding("somedb");
 sh.shardCollection("somedb.helloDoc", { "name" : "hashed" });
 
-# Заполнение БД
 use somedb
 for(var i = 0; i < 1000; i++) db.helloDoc.insertOne({age:i, name:"ly"+i})
 exit();
@@ -71,16 +72,18 @@ exit();
 ### Проверка шардирования
 
 ```shell
-docker exec -it shard1 mongosh --port 27018
+docker exec -it shard1-1 mongosh --port 27018
 use somedb;
 db.helloDoc.countDocuments();
 exit();
-
-docker exec -it shard2 mongosh --port 27019
+```
+```shell
+docker exec -it shard2-1 mongosh --port 27019
 use somedb;
 db.helloDoc.countDocuments();
 exit();
-
+```
+```shell
 docker exec -it mongos1 mongosh --port 27020
 use somedb;
 db.helloDoc.countDocuments();

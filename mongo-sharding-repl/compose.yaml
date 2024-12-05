@@ -5,7 +5,6 @@ services:
   configsrv1:
     container_name: configsrv1
     image: mongo:latest
-#    command: mongod --configsvr --replSet configReplicaSet --bind_ip_all
     volumes:
       - configsrv1_data:/data/db
     ports:
@@ -27,20 +26,10 @@ services:
       interval: 5s
       start_period: 10s
 
-#  configsrv2:
-#    container_name: configsrv2
-#    image: mongo:latest
-#    command: mongod --configsvr --replSet configReplicaSet --bind_ip_all
-#    volumes:
-#      - configsrv2_data:/data/db
-#    networks:
-#      app-network:
-#        ipv4_address: 173.17.0.3
 
-  shard1:
-    container_name: shard1
+  shard1-1:
+    container_name: shard1-1
     image: mongo:latest
-#    command: mongod --shardsvr --replSet shard1ReplicaSet --bind_ip_all
     volumes:
       - shard1_data:/data/db
     restart: always
@@ -53,7 +42,7 @@ services:
       [
         "--shardsvr",
         "--replSet",
-        "shard1",
+        "shard1-1",
         "--bind_ip_all",
         "--port",
         "27018"
@@ -63,10 +52,30 @@ services:
       interval: 5s
       start_period: 10s
 
-  shard2:
-    container_name: shard2
+  shard1-2:
     image: mongo:latest
-#    command: mongod --shardsvr --replSet shard2ReplicaSet --bind_ip_all
+    container_name: shard1-2
+    command: --shardsvr --replSet shard1-1 --port 27028
+    ports:
+      - 27028:27028
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.11
+
+  shard1-3:
+    image: mongo:latest
+    container_name: shard1-3
+    command: --shardsvr --replSet shard1-1 --port 27038
+    ports:
+      - 27038:27038
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.12
+
+
+  shard2-1:
+    container_name: shard2-1
+    image: mongo:latest
     volumes:
       - shard2_data:/data/db
     restart: always
@@ -79,7 +88,7 @@ services:
       [
         "--shardsvr",
         "--replSet",
-        "shard2",
+        "shard2-1",
         "--bind_ip_all",
         "--port",
         "27019"
@@ -89,11 +98,30 @@ services:
       interval: 5s
       start_period: 10s
 
+  shard2-2:
+    image: mongo:latest
+    container_name: shard2-2
+    command: --shardsvr --replSet shard2-1 --port 27029
+    ports:
+      - 27029:27029
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.13
+
+  shard2-3:
+    image: mongo:latest
+    container_name: shard2-3
+    command: --shardsvr --replSet shard2-1 --port 27039
+    ports:
+      - 27039:27039
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.14
+
   mongos1:
     container_name: mongos1
     image: mongo:latest
     restart: always
-#    command: mongos --configdb configReplicaSet/configsrv1:27017,configsrv2:27017 --bind_ip_all
     ports:
       - "27020:27020"
     networks:
@@ -112,16 +140,6 @@ services:
       test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
       interval: 5s
       start_period: 10s
-
-#  mongos2:
-#    container_name: mongos2
-#    image: mongo:latest
-#    command: mongos --configdb configReplicaSet/configsrv1:27017,configsrv2:27017 --bind_ip_all
-#    ports:
-#      - "27018:27017"
-#    networks:
-#      app-network:
-#        ipv4_address: 173.17.0.7
 
   pymongo_api:
     container_name: pymongo_api
@@ -150,6 +168,5 @@ networks:
 
 volumes:
   configsrv1_data:
-#  configsrv2_data:
   shard1_data:
   shard2_data:

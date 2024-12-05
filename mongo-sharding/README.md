@@ -58,11 +58,9 @@ docker exec -it mongos1 mongosh --port 27020
 sh.addShard("shard1/shard1:27018");
 sh.addShard("shard2/shard2:27019");
 
-# Включение шардирования
 sh.enableSharding("somedb");
 sh.shardCollection("somedb.helloDoc", { "name" : "hashed" });
 
-# Заполнение БД
 use somedb
 for(var i = 0; i < 1000; i++) db.helloDoc.insertOne({age:i, name:"ly"+i})
 exit();
